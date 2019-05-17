@@ -511,8 +511,8 @@ def parse_public_function(f, version, offset):
 			is_local = True
 		if b & FlirtFunctionFlag.FUNCTION_UNRESOLVED_COLLISION:
 			is_collision = True
-		if b & 0x01 or b & 0x04:
-			print('Investigate public name flag: 0x{:02X} @ 0x{:04X}'.format(b, offset))
+#		if b & 0x01 or b & 0x04:
+#			print('Investigate public name flag: 0x{:02X} @ 0x{:04X}'.format(b, offset))
 		b = read_u8(f)
 
 	name = list()
@@ -696,9 +696,14 @@ def funk_rename(addr, funk):
 	global rename_cnt
 	name = funk.name
 	if name != '?':
-		funk = getFunctionAt(parseAddress(hex(addr)))
-		funk.setName(name, SourceType.USER_DEFINED)
-		rename_cnt += 1
+		if not funk.is_local:
+			ghidra_funk = getFunctionAt(parseAddress(hex(addr + funk.offset)))
+			if ghidra_funk:
+				ghidra_funk.setName(name, SourceType.USER_DEFINED)
+				rename_cnt += 1
+			else:
+				# No current defined function at address
+				pass
 	return
 
 def apply_sig(flirt):
