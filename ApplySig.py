@@ -9,6 +9,7 @@
 from __future__ import print_function
 from ghidra.framework.model import DomainFile
 from ghidra.program.model.symbol import SourceType
+from ghidra.app.util.demangler import DemanglerUtil, DemanglerOptions
 from ghidra.util import Msg
 
 from java.lang import IllegalArgumentException
@@ -692,18 +693,31 @@ def get_function_end(funk):
 	return max
 
 rename_cnt = 0
+options = DemanglerOptions()
 def funk_rename(addr, funk):
 	global rename_cnt
+	global options
 	name = funk.name
 	if name != '?':
-		if not funk.is_local:
-			ghidra_funk = getFunctionAt(parseAddress(hex(addr + funk.offset)))
+		stripped = DemanglerUtil.stripSuperfluousSignatureSpaces(name)
+		demangled = DemanglerUtil.demangle(currentProgram, stripped)
+		address = parseAddress(hex(addr + funk.offset))
+		if demangled:
+			demangled.applyTo(currentProgram, address, options, monitor)
+		elif not funk.is_local:
+			ghidra_funk = getFunctionAt(address)
 			if ghidra_funk:
 				ghidra_funk.setName(name, SourceType.USER_DEFINED)
 				rename_cnt += 1
 			else:
-				# No current defined function at address
-				pass
+				createFunction(address, name)
+		else:
+			ghidra_symbol = getSymbolAt(address)
+			if ghidra_symbol:
+				ghidra_symbol.setName(name, SourceType.USER_DEFINED)
+				rename_cnt += 1
+			else:
+				createLabel(address, name, True, SourceType.USER_DEFINED)
 	return
 
 def apply_sig(flirt):
