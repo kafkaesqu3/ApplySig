@@ -699,25 +699,28 @@ def funk_rename(addr, funk):
 	global options
 	name = funk.name
 	if name != '?':
-		stripped = DemanglerUtil.stripSuperfluousSignatureSpaces(name)
-		demangled = DemanglerUtil.demangle(currentProgram, stripped)
-		address = parseAddress(hex(addr + funk.offset).strip('L'))
-		if demangled:
-			demangled.applyTo(currentProgram, address, options, monitor)
-		elif not funk.is_local:
-			ghidra_funk = getFunctionAt(address)
-			if ghidra_funk:
-				ghidra_funk.setName(name, SourceType.USER_DEFINED)
-				rename_cnt += 1
+		try: 
+			stripped = DemanglerUtil.stripSuperfluousSignatureSpaces(name)
+			demangled = DemanglerUtil.demangle(currentProgram, stripped)
+			address = parseAddress(hex(addr + funk.offset).strip('L'))
+			if demangled:
+				demangled.applyTo(currentProgram, address, options, monitor)
+			elif not funk.is_local:
+				ghidra_funk = getFunctionAt(address)
+				if ghidra_funk:
+					ghidra_funk.setName(name, SourceType.USER_DEFINED)
+					rename_cnt += 1
+				else:
+					createFunction(address, name)
 			else:
-				createFunction(address, name)
-		else:
-			ghidra_symbol = getSymbolAt(address)
-			if ghidra_symbol:
-				ghidra_symbol.setName(name, SourceType.USER_DEFINED)
-				rename_cnt += 1
-			else:
-				createLabel(address, name, True, SourceType.USER_DEFINED)
+				ghidra_symbol = getSymbolAt(address)
+				if ghidra_symbol:
+					ghidra_symbol.setName(name, SourceType.USER_DEFINED)
+					rename_cnt += 1
+				else:
+					createLabel(address, name, True, SourceType.USER_DEFINED)
+		except: 
+			print("Failed to rename {} (exception occured)", name)
 	return
 
 def apply_sig(flirt):
