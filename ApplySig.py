@@ -701,7 +701,7 @@ def funk_rename(addr, funk):
 	if name != '?':
 		stripped = DemanglerUtil.stripSuperfluousSignatureSpaces(name)
 		demangled = DemanglerUtil.demangle(currentProgram, stripped)
-		address = parseAddress(hex(addr + funk.offset))
+		address = parseAddress(hex(addr + funk.offset).strip('L'))
 		if demangled:
 			demangled.applyTo(currentProgram, address, options, monitor)
 		elif not funk.is_local:
@@ -722,13 +722,13 @@ def funk_rename(addr, funk):
 
 def apply_sig(flirt):
 	funk = getFirstFunction()
-	#print(funk.entryPoint
-	#print(get_function_end(funk))
+	# print(funk.entryPoint)
+	# print(get_function_end(funk))
 	while funk is not None:
 		funk_start = int(funk.entryPoint.toString(), 16)
 		funk_end   = get_function_end(funk)
-		funk_buf   = getBytes(parseAddress(hex(funk_start)), funk_end - funk_start + 0x100)
-		#print('%x - %x' % (funk_start, funk_end))
+		funk_buf   = getBytes(parseAddress(hex(funk_start).strip('L')), funk_end - funk_start + 0x100)
+		# print('%x - %x' % (funk_start, funk_end))
 		match_function(flirt, funk_buf, funk_start, funk_rename)
 		funk = getFunctionAfter(funk)
 
@@ -740,8 +740,8 @@ except:
 	print('Parsing Failed!')
 print('Name: ', flirt.header.library_name)
 print('Count:', flirt.header.n_functions)
-#print('ARCH: ', flirt.header.arch)
-#print('OS:   ', flirt.header.os_types)
+print('ARCH: ', flirt.header.arch)
+print('OS:   ', flirt.header.os_types)
 print('Apply Signatures.....')
 apply_sig(flirt)
 print('[ %d / %d ]' % (rename_cnt, flirt.header.n_functions))
